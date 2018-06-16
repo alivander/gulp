@@ -1,10 +1,19 @@
 {
-  "name": "gulp-base-configuration",
-  "version": "1.0.0",
-  "description": "Basic configuration of the project assembly",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "Alivander",
-  "license": "MIT"
+    "name": "gulp-base-configuration",
+    "version": "1.0.0",
+    "description": "Basic configuration of the project assembly",
+    "scripts": {
+        "build": "gulp build",
+        "start": "npm run build && gulp serve",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "Alivander",
+    "license": "MIT",
+    "devDependencies": {
+        "browser-sync": "^2.24.4",
+        "del": "^3.0.0",
+        "gulp": "^3.9.1",
+        "gulp-plumber": "^1.2.0",
+        "run-sequence": "^2.2.1"
+    }
 }
