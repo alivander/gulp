@@ -19,11 +19,14 @@ const concat = require('gulp-concat');
 const imagemin = require('gulp-imagemin');
 const webp = require('gulp-webp');
 const svgstore = require('gulp-svgstore');
+const favicons = require('favicons').stream;
 
 const plumber = require('gulp-plumber');
 const server = require('browser-sync').create();
 
-const devMode = /development/.test(process.env.NODE_ENV);
+const prodMode = /production/.test(process.env.NODE_ENV);
+
+// Assembling tasks
 
 gulp.task('html', () => gulp.src('src/*.html')
     .pipe(plumber())
@@ -45,7 +48,7 @@ gulp.task('style', () => gulp.src('src/scss/style.scss')
             flexbox: 'no-2009',
         }),
     ]))
-    .pipe(gulpif(devMode, csso()))
+    .pipe(gulpif(prodMode, csso()))
     .pipe(gulp.dest('build/css'))
     .pipe(server.stream()));
 
@@ -55,7 +58,7 @@ gulp.task('script', () => gulp.src('src/js/**/*.js')
     .pipe(babel({
         presets: ['env'],
     }))
-    .pipe(gulpif(devMode, uglyfly()))
+    .pipe(gulpif(prodMode, uglyfly()))
     .pipe(concat('script.js'))
     .pipe(sourcemaps.write('.'))
     .pipe(gulp.dest('build/js')));
@@ -76,7 +79,7 @@ gulp.task('images', () => gulp.src('src/img/**/*')
 
 gulp.task('webp', () => gulp.src('src/img/**/*.{png,jpg,jpeg,gif}')
     .pipe(plumber())
-    .pipe(webp({ quality: 90 }))
+    .pipe(cache(webp({ quality: 90 })))
     .pipe(gulp.dest('build/img')));
 
 gulp.task('sprite', () => gulp.src('build/img/sprite-*.svg')
@@ -87,9 +90,15 @@ gulp.task('sprite', () => gulp.src('build/img/sprite-*.svg')
     .pipe(rename('sprite.svg'))
     .pipe(gulp.dest('build/img')));
 
-gulp.task('fonts', () => gulp.src('src/fonts/*.{woff,woff2}')
-    .pipe(plumber())
-    .pipe(gulp.dest('build/fonts')));
+gulp.task('copy-static', () => {
+    gulp.src('src/fonts/*.{woff,woff2}')
+        .pipe(plumber())
+        .pipe(gulp.dest('build/fonts'));
+
+    gulp.src('src/favicons/**/*')
+        .pipe(plumber())
+        .pipe(gulp.dest('build/'));
+});
 
 gulp.task('serve', () => {
     server.init({
@@ -105,8 +114,6 @@ gulp.task('serve', () => {
 
 gulp.task('clear', () => del('build'));
 
-gulp.task('cache-clear', () => cache.clearAll());
-
 gulp.task('build', done => run(
     'clear',
     'style',
@@ -115,6 +122,34 @@ gulp.task('build', done => run(
     'sprite',
     'html',
     'script',
-    'fonts',
+    'copy-static',
     done,
 ));
+
+// Individual tasks
+
+gulp.task('cache-clear', () => cache.clearAll());
+
+gulp.task('create-favicon', () => gulp.src('src/favicon.png')
+    .pipe(plumber())
+    .pipe(favicons({
+        background: 'rgba(255, 255, 255, 0)',
+        version: 1.0,
+        logging: false,
+        html: 'index.html',
+        pipeHTML: true,
+        replace: true,
+        icons: {
+            android: true,
+            appleIcon: true,
+            appleStartup: true,
+            coast: false,
+            favicons: true,
+            firefox: true,
+            opengraph: false,
+            twitter: false,
+            yandex: false,
+            windows: false,
+        },
+    }))
+    .pipe(gulp.dest('src/favicons/')));
