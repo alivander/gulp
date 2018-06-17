@@ -1,0 +1,23 @@
+.page {
+    display: flex;
+    align-items: center;
+
+    padding: 20px;
+
+    border-radius: 5px;
+    background-color: $gray;
+
+    &::before {
+        display: block;
+        overflow: hidden;
+
+        width: 75px;
+        height: 75px;
+
+        margin-right: 20px;
+
+        content: url('../img/main/image.jpg');
+
+        border-radius: 5px;
+    }
+}

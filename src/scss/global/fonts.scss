@@ -1,0 +1,9 @@
+@font-face {
+    font-family: "Sample Font";
+    font-weight: 400;
+    font-style: normal;
+    src:
+        local("Sample_Font"),
+        url("./fonts/font.svg") format("svg");
+    font-display: swap;
+}
