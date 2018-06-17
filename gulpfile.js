@@ -1,4 +1,5 @@
 const gulp = require('gulp');
+const gulpif = require('gulp-if');
 const run = require('run-sequence');
 const rename = require('gulp-rename');
 const cache = require('gulp-cache');
@@ -12,7 +13,7 @@ const csso = require('gulp-csso');
 
 const babel = require('gulp-babel');
 const sourcemaps = require('gulp-sourcemaps');
-const jsmin = require('gulp-uglyfly');
+const uglyfly = require('gulp-uglyfly');
 const concat = require('gulp-concat');
 
 const imagemin = require('gulp-imagemin');
@@ -21,6 +22,8 @@ const svgstore = require('gulp-svgstore');
 
 const plumber = require('gulp-plumber');
 const server = require('browser-sync').create();
+
+const devMode = /development/.test(process.env.NODE_ENV);
 
 gulp.task('html', () => gulp.src('src/*.html')
     .pipe(plumber())
@@ -42,8 +45,7 @@ gulp.task('style', () => gulp.src('src/scss/style.scss')
             flexbox: 'no-2009',
         }),
     ]))
-    .pipe(csso())
-    .pipe(rename('style.min.css'))
+    .pipe(gulpif(devMode, csso()))
     .pipe(gulp.dest('build/css'))
     .pipe(server.stream()));
 
@@ -53,7 +55,7 @@ gulp.task('script', () => gulp.src('src/js/**/*.js')
     .pipe(babel({
         presets: ['env'],
     }))
-    .pipe(jsmin())
+    .pipe(gulpif(devMode, uglyfly()))
     .pipe(concat('script.js'))
     .pipe(sourcemaps.write('.'))
     .pipe(gulp.dest('build/js')));
@@ -85,6 +87,10 @@ gulp.task('sprite', () => gulp.src('build/img/sprite-*.svg')
     .pipe(rename('sprite.svg'))
     .pipe(gulp.dest('build/img')));
 
+gulp.task('fonts', () => gulp.src('src/fonts/*.{woff,woff2}')
+    .pipe(plumber())
+    .pipe(gulp.dest('build/fonts')));
+
 gulp.task('serve', () => {
     server.init({
         server: 'build/',
@@ -94,21 +100,21 @@ gulp.task('serve', () => {
     gulp.watch('src/sass/**/*.{scss,sass}', ['style']);
     gulp.watch('src/js/**/*.js', ['script']);
     gulp.watch('src/img/**/*', ['images', 'webp']);
+    gulp.watch('src/fonts/*.{woff,woff2}', ['fonts']);
 });
 
 gulp.task('clear', () => del('build'));
 
 gulp.task('cache-clear', () => cache.clearAll());
 
-gulp.task('build', (done) => {
-    run(
-        'clear',
-        'style',
-        'images',
-        'webp',
-        'sprite',
-        'html',
-        'script',
-        done,
-    );
-});
+gulp.task('build', done => run(
+    'clear',
+    'style',
+    'images',
+    'webp',
+    'sprite',
+    'html',
+    'script',
+    'fonts',
+    done,
+));
