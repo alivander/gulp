@@ -5,6 +5,9 @@ const rename = require('gulp-rename');
 const cache = require('gulp-cache');
 const del = require('del');
 
+const pug = require('gulp-pug');
+const topug = require('gulp-html2pug');
+
 const sass = require('gulp-sass');
 const postcss = require('gulp-postcss');
 const autoprefixer = require('autoprefixer');
@@ -28,12 +31,13 @@ const prodMode = /production/.test(process.env.NODE_ENV);
 
 // Assembling tasks
 
-gulp.task('html', () => gulp.src('src/*.html')
+gulp.task('views', () => gulp.src('src/pug/views/**/*.pug')
     .pipe(plumber())
+    .pipe(pug())
     .pipe(gulp.dest('build/'))
     .pipe(server.stream()));
 
-gulp.task('style', () => gulp.src('src/scss/style.scss')
+gulp.task('styles', () => gulp.src('src/scss/style.scss')
     .pipe(plumber())
     .pipe(sass())
     .pipe(postcss([
@@ -52,7 +56,7 @@ gulp.task('style', () => gulp.src('src/scss/style.scss')
     .pipe(gulp.dest('build/css'))
     .pipe(server.stream()));
 
-gulp.task('script', () => gulp.src('src/js/**/*.js')
+gulp.task('scripts', () => gulp.src('src/js/scripts/**/*.js')
     .pipe(plumber())
     .pipe(sourcemaps.init())
     .pipe(babel({
@@ -60,6 +64,14 @@ gulp.task('script', () => gulp.src('src/js/**/*.js')
     }))
     .pipe(gulpif(prodMode, uglyfly()))
     .pipe(concat('script.js'))
+    .pipe(sourcemaps.write('.'))
+    .pipe(gulp.dest('build/js')));
+
+gulp.task('libs', () => gulp.src('src/js/lib/**/*.js')
+    .pipe(plumber())
+    .pipe(sourcemaps.init())
+    .pipe(gulpif(prodMode, uglyfly()))
+    .pipe(concat('lib.js'))
     .pipe(sourcemaps.write('.'))
     .pipe(gulp.dest('build/js')));
 
@@ -91,13 +103,13 @@ gulp.task('sprite', () => gulp.src('build/img/sprite-*.svg')
     .pipe(gulp.dest('build/img')));
 
 gulp.task('copy-static', () => {
-    gulp.src('src/fonts/*.{woff,woff2}')
+    gulp.src('src/fonts/**/*')
         .pipe(plumber())
         .pipe(gulp.dest('build/fonts'));
 
-    gulp.src('src/favicons/**/*')
+    gulp.src('src/favicons/**/*.{png,ico,json,webapp}')
         .pipe(plumber())
-        .pipe(gulp.dest('build/'));
+        .pipe(gulp.dest('build/favicons'));
 });
 
 gulp.task('serve', () => {
@@ -105,24 +117,27 @@ gulp.task('serve', () => {
         server: 'build/',
     });
 
-    gulp.watch('src/*.html', ['html']);
-    gulp.watch('src/sass/**/*.{scss,sass}', ['style']);
-    gulp.watch('src/js/**/*.js', ['script']);
+    gulp.watch('src/pug/**/*', ['views']);
+    gulp.watch('src/scss/**/*', ['styles']);
+    gulp.watch('src/js/**/*', ['scripts']);
     gulp.watch('src/img/**/*', ['images', 'webp']);
-    gulp.watch('src/fonts/*.{woff,woff2}', ['fonts']);
+    gulp.watch('src/fonts/**/*', ['copy-static']);
 });
 
 gulp.task('clear', () => del('build'));
 
 gulp.task('build', done => run(
     'clear',
-    'style',
-    'images',
-    'webp',
+    [
+        'copy-static',
+        'views',
+        'styles',
+        'images',
+        'webp',
+        'libs',
+        'scripts',
+    ],
     'sprite',
-    'html',
-    'script',
-    'copy-static',
     done,
 ));
 
@@ -130,13 +145,16 @@ gulp.task('build', done => run(
 
 gulp.task('cache-clear', () => cache.clearAll());
 
-gulp.task('create-favicon', () => gulp.src('src/favicon.png')
+gulp.task('favicon-clear', () => del('src/favicons'));
+
+gulp.task('favicon-generate', () => gulp.src('src/favicon.png')
     .pipe(plumber())
     .pipe(favicons({
+        path: 'favicons',
         background: 'rgba(255, 255, 255, 0)',
         version: 1.0,
         logging: false,
-        html: 'index.html',
+        html: 'favicons.html',
         pipeHTML: true,
         replace: true,
         icons: {
@@ -153,3 +171,17 @@ gulp.task('create-favicon', () => gulp.src('src/favicon.png')
         },
     }))
     .pipe(gulp.dest('src/favicons/')));
+
+gulp.task('favicon-to-pug', () => gulp.src('src/favicons/favicons.html')
+    .pipe(topug())
+    .pipe(gulp.dest('src/favicons/')));
+
+gulp.task('favicon-del', () => del('src/favicons/favicons.html'));
+
+gulp.task('create-favicon', done => run(
+    'favicon-clear',
+    'favicon-generate',
+    'favicon-to-pug',
+    'favicon-del',
+    done,
+));
