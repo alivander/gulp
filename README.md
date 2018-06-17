@@ -9,3 +9,11 @@ npm run deploy - deploy files to GitHup Pages
 
 npm run lint - linting test
 ```
+
+Create project using:
+* Gulp
+* Pug
+* Sass (scss)
+* Babel
+* SVG sprite
+* Optimisation and minification html, styles, images, js
