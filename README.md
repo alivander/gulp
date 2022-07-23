@@ -11,9 +11,11 @@ npm run lint     // linting test
 ```
 
 Using:
-* Gulp
-* Pug
 * Sass (scss)
-* Babel
 * SVG sprite
+* Pug
+* Babel
+* Gulp
+* ESLint
+* StyleLint
 * Optimisation and minification html, styles, images, js
